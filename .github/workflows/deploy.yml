@@ -1,0 +1,68 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Linux Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libx11-dev libxi-dev libgl1-mesa-dev libasound2-dev
+
+      - name: Install Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Build WebAssembly
+        run: cargo build --target wasm32-unknown-unknown --release
+
+      - name: Prepare Deployment Directory
+        run: |
+          mkdir staging
+          cp target/wasm32-unknown-unknown/release/invaders_rust.wasm staging/game.wasm
+          cp -r assets staging/assets
+
+      - name: Generate HTML Entry Point
+        run: |
+          cat << 'EOF' > staging/index.html
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="utf-8">
+              <title>Invaders Game</title>
+              <style>
+                  html, body, canvas {
+                      margin: 0;
+                      padding: 0;
+                      width: 100%;
+                      height: 100%;
+                      overflow: hidden;
+                      background: black;
+                  }
+              </style>
+          </head>
+          <body>
+              <canvas id="glcanvas"></canvas>
+              <script src="https://not-fl3.github.io/miniquad-samples/mq_js_bundle.js"></script>
+              <script>load("game.wasm");</script>
+          </body>
+          </html>
+          EOF
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: staging
+          branch: gh-pages
