@@ -42,8 +42,19 @@ async fn main() {
     const QTY: usize = 500;
     const TEXTURES: usize = 5;
 
-    let sheet: Texture2D = load_texture("assets/sheet01.png").await.unwrap();
-    let sprite_balls: Texture2D = load_texture("assets/spritesheet.png").await.unwrap();
+    let sheet: Texture2D = load_texture("assets/sheet01.png")
+        .await
+        .unwrap_or_else(|_| {
+            println!("Failed to load sheet01");
+            Texture2D::empty()
+        });
+    let sprite_balls: Texture2D =
+        load_texture("assets/spritesheet.png")
+            .await
+            .unwrap_or_else(|_| {
+                println!("Failed to load sheet01");
+                Texture2D::empty()
+            });
 
     let pos = vec2((virtual_width / 2.0) - 16.0, virtual_height - 32.0 - 16.0);
     let mut player = Player {
