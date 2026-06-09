@@ -7,8 +7,12 @@ fn window_conf() -> Conf {
         window_title: "Invaders!".to_owned(),
         window_width: 1280,
         window_height: 720,
-        window_resizable: true, // Prevents users from resizing the window
-        ..Default::default()    // Fills in the rest of the settings with defaults
+        window_resizable: true,
+        platform: miniquad::conf::Platform {
+            webgl_version: miniquad::conf::WebGLVersion::WebGL2,
+            ..Default::default()
+        },
+        ..Default::default()
     }
 }
 
