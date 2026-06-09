@@ -1,27 +1,39 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="utf-8">
-    <title>Invaders Game</title>
-    <style>
-        html, body, canvas {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background: black;
-        }
-    </style>
-</head>
-<body>
-    <canvas id="glcanvas"></canvas>
-    <script src="https://not-fl3.github.io/miniquad-samples/mq_js_bundle.js"></script>
-    <script>
-      window.miniquad_config = {
-        prefer_webgl2: true
-      };
-      load("game.wasm");
-    </script>
-</body>
+    <head>
+        <meta charset="utf-8" />
+        <title>Invaders</title>
+        <style>
+            html,
+            body,
+            canvas {
+                margin: 0px;
+                padding: 0px;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+                position: absolute;
+                background: black;
+                z-index: 0;
+            }
+        </style>
+    </head>
+
+    <body>
+        <canvas id="glcanvas" tabindex="1"></canvas>
+        <script src="gl.js"></script>
+        <script>
+            window.miniquad_config = {
+                prefer_webgl2: true,
+                alpha: false,
+                antialias: true,
+                depth: true,
+                stencil: false,
+                premultipliedAlpha: false,
+                preserveDrawingBuffer: false,
+                powerPreference: "high-performance",
+            };
+            load("game.wasm");
+        </script>
+    </body>
 </html>
