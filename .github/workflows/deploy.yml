@@ -30,12 +30,6 @@ jobs:
 
       - name: Prepare Deployment Directory
         run: |
-          mkdir staging
-          cp target/wasm32-unknown-unknown/release/invaders_rust.wasm staging/game.wasm
-          cp -r assets staging/assets
-
-      - name: Prepare Deployment Directory
-        run: |
           cp target/wasm32-unknown-unknown/release/invaders_rust.wasm staging/game.wasm
           cp -r assets staging/assets
 
