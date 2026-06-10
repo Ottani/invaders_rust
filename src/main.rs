@@ -1,6 +1,12 @@
-mod entity;
-use entity::Entity;
+mod bullet;
+mod enemy;
+mod utils;
 use macroquad::prelude::*;
+
+use crate::bullet::BulletManager;
+use crate::enemy::EnemyManager;
+
+pub const DARKERGRAY: Color = Color::new(0.15, 0.15, 0.15, 1.00);
 
 fn window_conf() -> Conf {
     Conf {
@@ -14,10 +20,6 @@ fn window_conf() -> Conf {
         },
         ..Default::default()
     }
-}
-
-fn lerp(start: f32, end: f32, amount: f32) -> f32 {
-    start + (end - start) * amount
 }
 
 struct Player {
@@ -43,8 +45,6 @@ fn handle_input(player: &mut Player) {
 async fn main() {
     let virtual_width = 640.0;
     let virtual_height = 360.0;
-    const QTY: usize = 500;
-    const TEXTURES: usize = 5;
 
     let sheet: Texture2D = load_texture("assets/sheet01.png")
         .await
@@ -52,13 +52,6 @@ async fn main() {
             println!("Failed to load sheet01");
             Texture2D::empty()
         });
-    let sprite_balls: Texture2D =
-        load_texture("assets/spritesheet.png")
-            .await
-            .unwrap_or_else(|_| {
-                println!("Failed to load sheet01");
-                Texture2D::empty()
-            });
 
     let pos = vec2((virtual_width / 2.0) - 16.0, virtual_height - 32.0 - 16.0);
     let mut player = Player {
@@ -69,34 +62,19 @@ async fn main() {
         rect: Rect::new(0.0, 0.0, 32.0, 32.0),
     };
 
-    let ball_rects: Vec<Rect> = (0..TEXTURES)
-        .map(|i| Rect::new(i as f32 * 16.0, 0.0, 16.0, 16.0))
-        .collect();
-
-    let mut balls: Vec<Entity> = Vec::with_capacity(QTY);
-
-    for _ in 0..QTY {
-        let pos = vec2(
-            rand::gen_range(0.0, virtual_width - 16.0),
-            rand::gen_range(0.0, virtual_height - 16.0),
-        );
-        let speed = vec2(rand::gen_range(0.0, 1.0), rand::gen_range(0.0, 1.0)).normalize()
-            * rand::gen_range(-50.0, 50.0);
-        let damp = rand::gen_range(-0.99, -0.8);
-        let tex_rect = ball_rects[rand::gen_range(0, TEXTURES)];
-        balls.push(Entity::new(pos, speed, damp, tex_rect));
-    }
-
     let render_target = render_target(virtual_width as u32, virtual_height as u32);
     render_target.texture.set_filter(FilterMode::Nearest);
     let world = Rect::new(0.0, 0.0, virtual_width, virtual_height);
     let mut virtual_camera = Camera2D::from_display_rect(world);
     virtual_camera.render_target = Some(render_target.clone());
 
-    const DT: f32 = 1.0 / 60.0;
-    const G: f32 = 9.8 * 60.0;
-    let mut accumulator = 0.0;
+    let mut enemy_manager = EnemyManager::new();
+    enemy_manager.create_enemies();
 
+    let mut bullet_manager = BulletManager::new();
+
+    const DT: f32 = 1.0 / 60.0;
+    let mut accumulator = 0.0;
     let mut is_full = false;
 
     loop {
@@ -113,6 +91,14 @@ async fn main() {
         }
 
         handle_input(&mut player);
+        bullet_manager.update(frame_time);
+
+        if is_key_pressed(KeyCode::Space) {
+            bullet_manager.create_bullet(vec2(
+                player.position.x + player.rect.w / 2.0,
+                player.position.y,
+            ));
+        }
 
         while accumulator >= DT {
             player.prev_position = player.position;
@@ -122,41 +108,31 @@ async fn main() {
             } else if player.position.x > virtual_width - 32.0 {
                 player.position.x = virtual_width - 32.0;
             }
-
-            for ball in &mut balls {
-                ball.update_physics(DT, G, world);
-            }
+            enemy_manager.update_physics(DT, world);
+            bullet_manager.update_physics(DT, world);
             accumulator -= DT;
         }
         let alpha = accumulator / DT;
 
         set_camera(&virtual_camera);
-        clear_background(DARKGRAY);
+        clear_background(DARKERGRAY);
 
-        for ball in &balls {
-            draw_texture_ex(
-                &sprite_balls,
-                lerp(ball.prev_pos.x, ball.position.x, alpha).floor(),
-                lerp(ball.prev_pos.y, ball.position.y, alpha).floor(),
-                WHITE,
-                DrawTextureParams {
-                    source: Some(ball.tex_rect),
-                    ..Default::default()
-                },
-            );
-        }
+        bullet_manager.draw(alpha, &sheet);
 
         draw_texture_ex(
             &sheet,
-            lerp(player.prev_position.x, player.position.x, alpha).floor(),
-            lerp(player.prev_position.y, player.position.y, alpha).floor(),
+            utils::lerp(player.prev_position.x, player.position.x, alpha).floor(),
+            utils::lerp(player.prev_position.y, player.position.y, alpha).floor(),
             WHITE,
             DrawTextureParams {
                 source: Some(player.rect),
                 ..Default::default()
             },
         );
-        draw_text("Hello, Macroquad!", 20.0, 20.0, 30.0, WHITE);
+
+        enemy_manager.draw(alpha, &sheet);
+
+        draw_text("Hello, Macroquad!", 20.0, 20.0, 16.0, WHITE);
 
         set_default_camera();
         clear_background(BLACK);
