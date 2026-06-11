@@ -1,10 +1,12 @@
-mod bullet;
-mod enemy;
+mod bomb;
+mod bullets;
+mod enemies;
 mod utils;
 use macroquad::prelude::*;
 
-use crate::bullet::BulletManager;
-use crate::enemy::EnemyManager;
+use crate::bomb::BombManager;
+use bullets::BulletManager;
+use enemies::EnemyManager;
 
 pub const DARKERGRAY: Color = Color::new(0.15, 0.15, 0.15, 1.00);
 
@@ -72,6 +74,7 @@ async fn main() {
     enemy_manager.create_enemies();
 
     let mut bullet_manager = BulletManager::new();
+    let mut bomb_manager = BombManager::new();
 
     const DT: f32 = 1.0 / 60.0;
     let mut accumulator = 0.0;
@@ -108,8 +111,9 @@ async fn main() {
             } else if player.position.x > virtual_width - 32.0 {
                 player.position.x = virtual_width - 32.0;
             }
-            enemy_manager.update_physics(DT, world);
-            bullet_manager.update_physics(DT, world);
+            enemy_manager.update_physics(DT, world, &mut bomb_manager);
+            bullet_manager.update_physics(DT, world, &mut enemy_manager);
+            bomb_manager.update_physics(DT, world);
             accumulator -= DT;
         }
         let alpha = accumulator / DT;
@@ -118,6 +122,7 @@ async fn main() {
         clear_background(DARKERGRAY);
 
         bullet_manager.draw(alpha, &sheet);
+        bomb_manager.draw(alpha, &sheet);
 
         draw_texture_ex(
             &sheet,
