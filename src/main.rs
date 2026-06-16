@@ -3,9 +3,11 @@ mod bullets;
 mod enemies;
 mod utils;
 use macroquad::prelude::*;
+mod defenses;
 
 use crate::bomb::BombManager;
 use bullets::BulletManager;
+use defenses::DefenseManager;
 use enemies::EnemyManager;
 
 pub const DARKERGRAY: Color = Color::new(0.15, 0.15, 0.15, 1.00);
@@ -45,9 +47,6 @@ fn handle_input(player: &mut Player) {
 
 #[macroquad::main(window_conf())]
 async fn main() {
-    let virtual_width = 640.0;
-    let virtual_height = 360.0;
-
     let sheet: Texture2D = load_texture("assets/sheet01.png")
         .await
         .unwrap_or_else(|_| {
@@ -55,7 +54,10 @@ async fn main() {
             Texture2D::empty()
         });
 
-    let pos = vec2((virtual_width / 2.0) - 16.0, virtual_height - 32.0 - 16.0);
+    let pos = vec2(
+        (utils::GAME_WIDTH / 2.0) - 16.0,
+        utils::GAME_HEIGHT - 32.0 - 16.0,
+    );
     let mut player = Player {
         position: pos,
         prev_position: pos,
@@ -64,9 +66,9 @@ async fn main() {
         rect: Rect::new(0.0, 0.0, 32.0, 32.0),
     };
 
-    let render_target = render_target(virtual_width as u32, virtual_height as u32);
+    let render_target = render_target(utils::GAME_WIDTH as u32, utils::GAME_HEIGHT as u32);
     render_target.texture.set_filter(FilterMode::Nearest);
-    let world = Rect::new(0.0, 0.0, virtual_width, virtual_height);
+    let world = Rect::new(0.0, 0.0, utils::GAME_WIDTH, utils::GAME_HEIGHT);
     let mut virtual_camera = Camera2D::from_display_rect(world);
     virtual_camera.render_target = Some(render_target.clone());
 
@@ -75,6 +77,8 @@ async fn main() {
 
     let mut bullet_manager = BulletManager::new();
     let mut bomb_manager = BombManager::new();
+    let mut defense_manager = DefenseManager::new();
+    defense_manager.create_defenses();
 
     const DT: f32 = 1.0 / 60.0;
     let mut accumulator = 0.0;
@@ -108,8 +112,8 @@ async fn main() {
             player.position += player.direction * player.speed * DT;
             if player.position.x < 0.0 {
                 player.position.x = 0.0;
-            } else if player.position.x > virtual_width - 32.0 {
-                player.position.x = virtual_width - 32.0;
+            } else if player.position.x > utils::GAME_WIDTH - 32.0 {
+                player.position.x = utils::GAME_WIDTH - 32.0;
             }
             enemy_manager.update_physics(DT, world, &mut bomb_manager);
             bullet_manager.update_physics(DT, world, &mut enemy_manager);
@@ -123,6 +127,7 @@ async fn main() {
 
         bullet_manager.draw(alpha, &sheet);
         bomb_manager.draw(alpha, &sheet);
+        defense_manager.draw(&sheet);
 
         draw_texture_ex(
             &sheet,
@@ -142,13 +147,13 @@ async fn main() {
         set_default_camera();
         clear_background(BLACK);
 
-        let scale = (screen_width() / virtual_width)
-            .min(screen_height() / virtual_height)
+        let scale = (screen_width() / utils::GAME_WIDTH)
+            .min(screen_height() / utils::GAME_HEIGHT)
             .floor()
             .max(1.0);
 
-        let dest_w = virtual_width * scale;
-        let dest_h = virtual_height * scale;
+        let dest_w = utils::GAME_WIDTH * scale;
+        let dest_h = utils::GAME_HEIGHT * scale;
         let x_offset = (screen_width() - dest_w) / 2.0;
         let y_offset = (screen_height() - dest_h) / 2.0;
 

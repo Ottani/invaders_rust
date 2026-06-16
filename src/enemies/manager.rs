@@ -90,9 +90,11 @@ impl EnemyManager {
         if self.shoot_delay >= SHOOT_DELAY {
             self.shoot_delay = 0.0;
             if !self.enemies.is_empty() {
-                let shooters = self
-                    .enemies
-                    .choose_multiple(rand::gen_range(MIN_SHOOTERS, MAX_SHOOTERS));
+                let qty_enemies = self.enemies.len();
+                let shooters = self.enemies.choose_multiple(rand::gen_range(
+                    MIN_SHOOTERS.min(qty_enemies),
+                    MAX_SHOOTERS.min(qty_enemies) + 1,
+                ));
                 for shooter in shooters {
                     let shoot_position = vec2(
                         shooter.position.x + shooter.position.w * 0.5f32,
