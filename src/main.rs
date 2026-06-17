@@ -1,14 +1,12 @@
 mod bomb;
-mod bullets;
+mod bullet;
 mod enemies;
+mod game_state;
+mod rock;
 mod utils;
-use macroquad::prelude::*;
-mod defenses;
-
-use crate::bomb::BombManager;
-use bullets::BulletManager;
-use defenses::DefenseManager;
+use crate::{bomb::BombManager, game_state::GameState};
 use enemies::EnemyManager;
+use macroquad::prelude::*;
 
 pub const DARKERGRAY: Color = Color::new(0.15, 0.15, 0.15, 1.00);
 
@@ -47,12 +45,12 @@ fn handle_input(player: &mut Player) {
 
 #[macroquad::main(window_conf())]
 async fn main() {
-    let sheet: Texture2D = load_texture("assets/sheet01.png")
+    let sheet_image = load_image("assets/sheet01.png")
         .await
-        .unwrap_or_else(|_| {
-            println!("Failed to load sheet01");
-            Texture2D::empty()
-        });
+        .expect("Failed to load spritesheet!");
+    let sheet: Texture2D = Texture2D::from_image(&sheet_image);
+
+    let mut game_state = GameState::new(&sheet_image);
 
     let pos = vec2(
         (utils::GAME_WIDTH / 2.0) - 16.0,
@@ -75,10 +73,7 @@ async fn main() {
     let mut enemy_manager = EnemyManager::new();
     enemy_manager.create_enemies();
 
-    let mut bullet_manager = BulletManager::new();
     let mut bomb_manager = BombManager::new();
-    let mut defense_manager = DefenseManager::new();
-    defense_manager.create_defenses();
 
     const DT: f32 = 1.0 / 60.0;
     let mut accumulator = 0.0;
@@ -98,10 +93,10 @@ async fn main() {
         }
 
         handle_input(&mut player);
-        bullet_manager.update(frame_time);
+        game_state.update_animations(frame_time);
 
         if is_key_pressed(KeyCode::Space) {
-            bullet_manager.create_bullet(vec2(
+            game_state.create_bullet(vec2(
                 player.position.x + player.rect.w / 2.0,
                 player.position.y,
             ));
@@ -116,7 +111,7 @@ async fn main() {
                 player.position.x = utils::GAME_WIDTH - 32.0;
             }
             enemy_manager.update_physics(DT, world, &mut bomb_manager);
-            bullet_manager.update_physics(DT, world, &mut enemy_manager);
+            game_state.update_physics(DT, world);
             bomb_manager.update_physics(DT, world);
             accumulator -= DT;
         }
@@ -125,9 +120,8 @@ async fn main() {
         set_camera(&virtual_camera);
         clear_background(DARKERGRAY);
 
-        bullet_manager.draw(alpha, &sheet);
         bomb_manager.draw(alpha, &sheet);
-        defense_manager.draw(&sheet);
+        game_state.draw(alpha, &sheet);
 
         draw_texture_ex(
             &sheet,

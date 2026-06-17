@@ -1,4 +1,3 @@
-use crate::enemies::EnemyManager;
 use crate::utils::lerp;
 use macroquad::prelude::*;
 
@@ -12,8 +11,8 @@ const TEX_RECTS: [Rect; 4] = [
 ];
 
 pub struct Bullet {
-    position: Rect,
-    prev_pos: Rect,
+    pub position: Rect,
+    pub prev_pos: Rect,
     speed: f32,
     frame: usize,
     animation_timer: f32,
@@ -44,24 +43,19 @@ impl Bullet {
         self.frame = self.animation_timer as usize;
     }
 
-    pub fn update_physics(
-        &mut self,
-        delta: f32,
-        world: Rect,
-        enemy_manager: &mut EnemyManager,
-    ) -> bool {
+    pub fn update_physics(&mut self, delta: f32, world: Rect) -> bool {
         self.prev_pos = self.position;
         self.speed += ACCEL * delta;
         self.position.y += self.speed * delta;
         if self.position.y < world.y {
             return false;
         }
-        for enemy in &mut enemy_manager.enemies {
-            if enemy.life > 0 && self.position.overlaps(&enemy.position) {
-                enemy.life -= 1;
-                return false;
-            }
-        }
+        // for enemy in &mut enemy_manager.enemies {
+        //     if enemy.life > 0 && self.position.overlaps(&enemy.position) {
+        //         enemy.life -= 1;
+        //         return false;
+        //     }
+        // }
         true
     }
 
