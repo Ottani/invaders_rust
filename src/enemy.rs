@@ -49,6 +49,12 @@ impl Enemy {
         }
     }
 
+    pub fn update_position(&mut self, movement: Vec2) {
+        self.prev_pos = self.position;
+        self.position.x += movement.x;
+        self.position.y += movement.y;
+    }
+
     pub fn draw(&self, alpha: f32, texture: &Texture2D) {
         draw_texture_ex(
             &texture,
