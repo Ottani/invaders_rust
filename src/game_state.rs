@@ -122,17 +122,12 @@ impl GameState {
         let mut max_x = f32::MIN;
         let mut max_y = f32::MIN;
 
-        self.enemies.retain_mut(|enemy| {
-            if enemy.life > 0 {
-                min_x = min_x.min(enemy.position.x);
-                min_y = min_y.min(enemy.position.y);
-                max_x = max_x.max(enemy.position.right());
-                max_y = max_y.max(enemy.position.bottom());
-                true
-            } else {
-                false
-            }
-        });
+        for enemy in &mut self.enemies {
+            min_x = min_x.min(enemy.position.x);
+            min_y = min_y.min(enemy.position.y);
+            max_x = max_x.max(enemy.position.right());
+            max_y = max_y.max(enemy.position.bottom());
+        }
         if self.enemies.is_empty() {
             self.enemy_area_rect = Rect::new(0.0, 0.0, 0.0, 0.0);
         } else {
@@ -189,7 +184,6 @@ impl GameState {
                     *slot = None;
                 }
             }
-            // TODO move collisions to somewhere here
         }
 
         self.calculate_enemy_rect();
@@ -217,6 +211,23 @@ impl GameState {
                 }
             }
         }
+
+        self.resolve_collisions();
+    }
+
+    fn resolve_collisions(&mut self) {
+        for slot in self.bullets.iter_mut() {
+            if let Some(bullet) = slot {
+                for enemy in &mut self.enemies {
+                    if !enemy.is_dead() && bullet.position.overlaps(&enemy.position) {
+                        enemy.take_damage(1);
+                        *slot = None;
+                        break;
+                    }
+                }
+            }
+        }
+        self.enemies.retain(|enemy| !enemy.is_dead());
     }
 
     pub fn draw(&self, alpha: f32, texture: &Texture2D) {

@@ -33,8 +33,8 @@ impl EnemyType {
 
 pub struct Enemy {
     pub position: Rect,
-    pub prev_pos: Rect,
-    pub life: i32,
+    prev_pos: Rect,
+    life: i32,
     enemy_type: EnemyType,
 }
 
@@ -47,6 +47,18 @@ impl Enemy {
             life: enemy_type.life(),
             enemy_type,
         }
+    }
+
+    pub fn take_damage(&mut self, amount: i32) {
+        self.life -= amount;
+        if self.life <= 0 {
+            // Is dead
+        }
+    }
+
+    // A helper method makes the lifecycle status readable to the rest of the game
+    pub fn is_dead(&self) -> bool {
+        self.life <= 0
     }
 
     pub fn update_position(&mut self, movement: Vec2) {

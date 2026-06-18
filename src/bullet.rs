@@ -50,12 +50,6 @@ impl Bullet {
         if self.position.y < world.y {
             return false;
         }
-        // for enemy in &mut enemy_manager.enemies {
-        //     if enemy.life > 0 && self.position.overlaps(&enemy.position) {
-        //         enemy.life -= 1;
-        //         return false;
-        //     }
-        // }
         true
     }
 
