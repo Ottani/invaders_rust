@@ -41,10 +41,11 @@ pub struct GameState {
 impl GameState {
     pub fn new(sheet_image: &Image) -> Self {
         let rocks = Self::create_rocks(sheet_image);
-        let enemies = Self::create_enemies();
+        let mut enemies: Vec<Enemy> = Vec::new();
+        Self::create_enemies(&mut enemies);
         Self {
             state: MainMenu,
-            player: Player::new(vec2((GAME_WIDTH / 2.0) - 16.0, PLAYER_Y)),
+            player: Player::new(PLAYER_Y),
             rocks,
             bullets: Default::default(),
             bombs: Default::default(),
@@ -75,10 +76,11 @@ impl GameState {
         rocks
     }
 
-    fn create_enemies() -> Vec<Enemy> {
+    fn create_enemies(enemies: &mut Vec<Enemy>) {
         const COLS: usize = 10;
         const ROWS: usize = 5;
-        let mut enemies: Vec<Enemy> = Vec::with_capacity(COLS * ROWS);
+        enemies.clear();
+        enemies.reserve(COLS * ROWS);
         let gap = 8.0;
         for y in 0..ROWS {
             let enemy_type = match y {
@@ -92,7 +94,17 @@ impl GameState {
                 enemies.push(Enemy::new(point, enemy_type));
             }
         }
-        enemies
+    }
+
+    pub fn reset(&mut self, sheet_image: &Image) {
+        self.player.reset(PLAYER_Y);
+        self.bullets = Default::default();
+        self.bombs = Default::default();
+        Self::create_enemies(&mut self.enemies);
+        self.rocks = Self::create_rocks(sheet_image);
+        self.enemy_area_rect = EMPTY_RECT;
+        self.enemy_speed = 50.0;
+        self.enemy_shoot_delay = 0.0;
     }
 
     pub fn handle_input(&mut self) {
@@ -174,6 +186,7 @@ impl GameState {
     }
 
     pub fn update_animations(&mut self, frame_time: f32) {
+        self.player.update(frame_time);
         for slot in self.bullets.iter_mut() {
             if let Some(bullet) = slot {
                 bullet.update(frame_time);
@@ -238,6 +251,20 @@ impl GameState {
             }
         }
         self.enemies.retain(|enemy| !enemy.is_dead());
+
+        if self.player.is_alive() {
+            for slot in self.bombs.iter_mut() {
+                if let Some(bomb) = slot {
+                    if bomb.position.y >= PLAYER_Y {
+                        if self.player.check_collision(&bomb.position) {
+                            self.player.explode();
+                            *slot = None;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
     }
 
     pub fn draw(&self, alpha: f32, texture: &Texture2D) {

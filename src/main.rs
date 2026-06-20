@@ -3,11 +3,13 @@ mod bullet;
 mod enemy;
 mod game_state;
 mod main_menu;
+mod pause_menu;
 mod player;
 mod rock;
 mod utils;
 use crate::game_state::{GameState, State};
 use crate::main_menu::MainMenu;
+use crate::pause_menu::{MenuAction, PauseMenu};
 use macroquad::prelude::*;
 
 pub const DARKERGRAY: Color = Color::new(0.15, 0.15, 0.15, 1.00);
@@ -35,6 +37,7 @@ async fn main() {
 
     let mut game_state = GameState::new(&sheet_image);
     let mut main_menu = MainMenu::new();
+    let mut pause_menu = PauseMenu::new();
 
     let render_target = render_target(utils::GAME_WIDTH as u32, utils::GAME_HEIGHT as u32);
     render_target.texture.set_filter(FilterMode::Nearest);
@@ -45,7 +48,6 @@ async fn main() {
     const DT: f32 = 1.0 / 60.0;
     let mut accumulator = 0.0;
     let mut is_full = false;
-    let mut alpha;
 
     loop {
         let frame_time = get_frame_time().min(0.25);
@@ -55,10 +57,37 @@ async fn main() {
             set_fullscreen(is_full);
         }
 
-        if game_state.state != State::MainMenu {
-            if is_key_pressed(KeyCode::Escape) {
-                game_state.state = State::Paused;
+        match game_state.state {
+            State::MainMenu => {
+                if main_menu.update() {
+                    game_state.state = State::Running;
+                }
             }
+            State::Running => {
+                if is_key_pressed(KeyCode::Escape) {
+                    pause_menu.reset();
+                    game_state.state = State::Paused;
+                }
+            }
+            State::Paused => {
+                if let Some(action) = pause_menu.update() {
+                    match action {
+                        MenuAction::Resume => {
+                            game_state.state = State::Running;
+                        }
+                        MenuAction::Restart => {
+                            game_state.reset(&sheet_image);
+                            game_state.state = State::Running;
+                        }
+                        MenuAction::Exit => {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        let alpha = if game_state.state == State::Running {
             accumulator += frame_time;
             game_state.handle_input();
             game_state.update_animations(frame_time);
@@ -67,23 +96,24 @@ async fn main() {
                 game_state.update_physics(DT, world);
                 accumulator -= DT;
             }
-            alpha = accumulator / DT;
+            accumulator / DT
         } else {
-            alpha = 1.0;
-            if main_menu.update() {
-                game_state.state = State::Running;
-            }
-        }
+            1.0
+        };
 
         set_camera(&virtual_camera);
         clear_background(DARKERGRAY);
 
         game_state.draw(alpha, &sheet);
-        if game_state.state == State::MainMenu {
-            main_menu.draw();
+        match game_state.state {
+            State::MainMenu => {
+                main_menu.draw();
+            }
+            State::Running => {}
+            State::Paused => {
+                pause_menu.draw();
+            }
         }
-
-        draw_text("Hello, Macroquad!", 20.0, 20.0, 16.0, WHITE);
 
         set_default_camera();
         clear_background(BLACK);

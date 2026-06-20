@@ -1,9 +1,9 @@
 use crate::utils::GAME_WIDTH;
 use macroquad::prelude::*;
 
-pub struct MainMenu {}
+const PRESS_TO_START: &str = "* Press Any Key to Start! *";
 
-const PRESS_TO_START: &'static str = "* Press Any Key to Start! *";
+pub struct MainMenu {}
 
 impl MainMenu {
     pub fn new() -> Self {

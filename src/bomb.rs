@@ -11,7 +11,7 @@ const TEX_RECTS: [Rect; 4] = [
 ];
 
 pub struct Bomb {
-    position: Rect,
+    pub position: Rect,
     prev_pos: Rect,
     speed: f32,
     frame: usize,
