@@ -6,7 +6,7 @@ pub struct Player {
     prev_position: Rect,
     pub direction: f32,
     speed: f32,
-    pub rect: Rect,
+    rect: Rect,
 }
 
 impl Player {

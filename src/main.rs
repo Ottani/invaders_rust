@@ -2,10 +2,12 @@ mod bomb;
 mod bullet;
 mod enemy;
 mod game_state;
+mod main_menu;
 mod player;
 mod rock;
 mod utils;
-use crate::game_state::GameState;
+use crate::game_state::{GameState, State};
+use crate::main_menu::MainMenu;
 use macroquad::prelude::*;
 
 pub const DARKERGRAY: Color = Color::new(0.15, 0.15, 0.15, 1.00);
@@ -32,6 +34,7 @@ async fn main() {
     let sheet: Texture2D = Texture2D::from_image(&sheet_image);
 
     let mut game_state = GameState::new(&sheet_image);
+    let mut main_menu = MainMenu::new();
 
     let render_target = render_target(utils::GAME_WIDTH as u32, utils::GAME_HEIGHT as u32);
     render_target.texture.set_filter(FilterMode::Nearest);
@@ -42,33 +45,43 @@ async fn main() {
     const DT: f32 = 1.0 / 60.0;
     let mut accumulator = 0.0;
     let mut is_full = false;
+    let mut alpha;
 
     loop {
         let frame_time = get_frame_time().min(0.25);
-        accumulator += frame_time;
 
         if is_key_pressed(KeyCode::F11) {
             is_full = !is_full;
             set_fullscreen(is_full);
         }
 
-        if is_key_pressed(KeyCode::Escape) {
-            break;
-        }
+        if game_state.state != State::MainMenu {
+            if is_key_pressed(KeyCode::Escape) {
+                game_state.state = State::Paused;
+            }
+            accumulator += frame_time;
+            game_state.handle_input();
+            game_state.update_animations(frame_time);
 
-        game_state.handle_input();
-        game_state.update_animations(frame_time);
-
-        while accumulator >= DT {
-            game_state.update_physics(DT, world);
-            accumulator -= DT;
+            while accumulator >= DT {
+                game_state.update_physics(DT, world);
+                accumulator -= DT;
+            }
+            alpha = accumulator / DT;
+        } else {
+            alpha = 1.0;
+            if main_menu.update() {
+                game_state.state = State::Running;
+            }
         }
-        let alpha = accumulator / DT;
 
         set_camera(&virtual_camera);
         clear_background(DARKERGRAY);
 
         game_state.draw(alpha, &sheet);
+        if game_state.state == State::MainMenu {
+            main_menu.draw();
+        }
 
         draw_text("Hello, Macroquad!", 20.0, 20.0, 16.0, WHITE);
 

@@ -1,6 +1,7 @@
 use crate::bomb::Bomb;
 use crate::bullet::Bullet;
 use crate::enemy::{Enemy, EnemyType};
+use crate::game_state::State::MainMenu;
 use crate::player::Player;
 use crate::rock::ROCK_SIZE;
 use crate::rock::Rock;
@@ -18,7 +19,15 @@ const ENEMY_SHOOT_DELAY: f32 = 0.75;
 const MIN_SHOOTERS: usize = 2;
 const MAX_SHOOTERS: usize = 6;
 
+#[derive(PartialEq, Eq)]
+pub enum State {
+    MainMenu,
+    Running,
+    Paused,
+}
+
 pub struct GameState {
+    pub state: State,
     player: Player,
     rocks: [Option<Rock>; NUM_ROCKS],
     bullets: [Option<Bullet>; MAX_BULLETS],
@@ -34,6 +43,7 @@ impl GameState {
         let rocks = Self::create_rocks(sheet_image);
         let enemies = Self::create_enemies();
         Self {
+            state: MainMenu,
             player: Player::new(vec2((GAME_WIDTH / 2.0) - 16.0, PLAYER_Y)),
             rocks,
             bullets: Default::default(),
@@ -96,7 +106,7 @@ impl GameState {
         self.player.direction = direction;
         if is_key_pressed(KeyCode::Space) {
             self.create_bullet(vec2(
-                self.player.position.x + self.player.rect.w / 2.0,
+                self.player.position.x + self.player.position.w / 2.0,
                 self.player.position.y,
             ));
         }
