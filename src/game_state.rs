@@ -24,6 +24,9 @@ pub enum State {
     MainMenu,
     Running,
     Paused,
+    Exploding,
+    Waiting,
+    GameOver,
 }
 
 pub struct GameState {
@@ -36,6 +39,8 @@ pub struct GameState {
     enemy_area_rect: Rect,
     enemy_speed: f32,
     enemy_shoot_delay: f32,
+    pub lives: i32,
+    pub score: i32,
 }
 
 impl GameState {
@@ -53,6 +58,8 @@ impl GameState {
             enemy_area_rect: EMPTY_RECT,
             enemy_speed: 50.0,
             enemy_shoot_delay: 0.0,
+            lives: 3,
+            score: 0,
         }
     }
 
@@ -90,7 +97,7 @@ impl GameState {
                 _ => EnemyType::Weak,
             };
             for x in 0..COLS {
-                let point = vec2(x as f32 * 32.0 + gap * x as f32, y as f32 * 32.0);
+                let point = vec2(x as f32 * 32.0 + gap * x as f32, (y as f32 * 32.0) + 24.0);
                 enemies.push(Enemy::new(point, enemy_type));
             }
         }
@@ -105,6 +112,8 @@ impl GameState {
         self.enemy_area_rect = EMPTY_RECT;
         self.enemy_speed = 50.0;
         self.enemy_shoot_delay = 0.0;
+        self.lives = 3;
+        self.score = 0;
     }
 
     pub fn handle_input(&mut self) {
@@ -185,6 +194,10 @@ impl GameState {
         }
     }
 
+    pub fn update_player_only(&mut self, frame_time: f32) {
+        self.player.update(frame_time);
+    }
+
     pub fn update_animations(&mut self, frame_time: f32) {
         self.player.update(frame_time);
         for slot in self.bullets.iter_mut() {
@@ -259,12 +272,30 @@ impl GameState {
                         if self.player.check_collision(&bomb.position) {
                             self.player.explode();
                             *slot = None;
+                            self.update_lives();
                             break;
                         }
                     }
                 }
             }
         }
+    }
+
+    fn update_lives(&mut self) {
+        self.lives -= 1;
+        if self.lives < 0 {
+            self.state = State::GameOver;
+        } else {
+            self.state = State::Exploding;
+        }
+    }
+
+    pub fn explosion_complete(&mut self) -> bool {
+        self.player.is_dead()
+    }
+
+    pub fn player_reset(&mut self) {
+        self.player.reset(PLAYER_Y);
     }
 
     pub fn draw(&self, alpha: f32, texture: &Texture2D) {

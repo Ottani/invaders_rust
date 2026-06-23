@@ -67,6 +67,10 @@ impl Player {
         self.state == PlayerState::Alive
     }
 
+    pub fn is_dead(&self) -> bool {
+        self.state == PlayerState::Dead
+    }
+
     pub fn explode(&mut self) {
         self.state = PlayerState::Exploding;
         self.explosion_animation_timer = 0.0;
