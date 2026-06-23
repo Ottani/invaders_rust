@@ -5,10 +5,19 @@ on:
     branches: [main]
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
   build-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
 
     steps:
@@ -32,9 +41,14 @@ jobs:
         run: |
           cp target/wasm32-unknown-unknown/release/invaders_rust.wasm staging/game.wasm
           cp -r assets staging/assets
+          BUILD_ID="${{ github.run_id }}"
+          sed -i "s|load(\"game.wasm\")|load(\"game.wasm?v=${BUILD_ID}\")|g" staging/index.html
+
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: staging
 
       - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          folder: staging
-          branch: gh-pages
+        id: deployment
+        uses: actions/deploy-pages@v4
