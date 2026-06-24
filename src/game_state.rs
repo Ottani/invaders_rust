@@ -74,9 +74,11 @@ impl GameState {
 
         for i in 0..NUM_ROCKS {
             let image = sheet_image.sub_image(Rect::new(192.0, 32.0, 48.0, 48.0));
+            let impact = sheet_image.sub_image(Rect::new(240.0, 16.0, 16.0, 16.0));
             rocks[i] = Some(Rock::new(
                 vec2(start_pos.x + i as f32 * (ROCK_SIZE + ROCK_GAP), start_pos.y),
-                &image,
+                image,
+                impact,
             ));
         }
 
@@ -262,19 +264,39 @@ impl GameState {
                     }
                 }
             }
+            if let Some(bullet) = slot {
+                for some_rock in self.rocks.iter_mut() {
+                    if let Some(rock) = some_rock {
+                        if rock.check_collision(&bullet.position) {
+                            *slot = None;
+                            break;
+                        }
+                    }
+                }
+            }
         }
         self.enemies.retain(|enemy| !enemy.is_dead());
 
-        if self.player.is_alive() {
-            for slot in self.bombs.iter_mut() {
-                if let Some(bomb) = slot {
-                    if bomb.position.y >= PLAYER_Y {
-                        if self.player.check_collision(&bomb.position) {
-                            self.player.explode();
-                            *slot = None;
-                            self.update_lives();
-                            break;
+        for slot in self.bombs.iter_mut() {
+            if let Some(bomb) = slot {
+                if bomb.position.y >= ROCKS_Y - bomb.position.h {
+                    for some_rock in self.rocks.iter_mut() {
+                        if let Some(rock) = some_rock {
+                            if rock.check_collision(&bomb.position) {
+                                *slot = None;
+                                break;
+                            }
                         }
+                    }
+                }
+            }
+            if let Some(bomb) = slot {
+                if bomb.position.y >= PLAYER_Y - bomb.position.h && self.player.is_alive() {
+                    if self.player.check_collision(&bomb.position) {
+                        self.player.explode();
+                        *slot = None;
+                        self.update_lives();
+                        break;
                     }
                 }
             }
