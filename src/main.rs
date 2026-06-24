@@ -9,11 +9,13 @@ mod player;
 mod rock;
 mod ui;
 mod utils;
+mod victory_screen;
 mod wait_screen;
 use crate::game_over::GameOverMenu;
 use crate::game_state::{GameState, State};
 use crate::pause_menu::PauseMenu;
 use crate::ui::MenuAction;
+use crate::victory_screen::VictoryScreen;
 
 use macroquad::prelude::*;
 
@@ -43,6 +45,7 @@ async fn main() {
     let mut game_state = GameState::new(&sheet_image);
     let mut pause_menu = PauseMenu::new();
     let mut game_over_menu = GameOverMenu::new();
+    let mut victory_screen = VictoryScreen::new();
 
     let render_target = render_target(utils::GAME_WIDTH as u32, utils::GAME_HEIGHT as u32);
     render_target.texture.set_filter(FilterMode::Nearest);
@@ -117,6 +120,20 @@ async fn main() {
                     }
                 }
             }
+            State::Victory => {
+                if let Some(action) = victory_screen.update(mouse_pos) {
+                    match action {
+                        MenuAction::Restart => {
+                            game_state.reset(&sheet_image);
+                            game_state.state = State::Running;
+                        }
+                        MenuAction::Exit => {
+                            break;
+                        }
+                        MenuAction::Resume => {}
+                    }
+                }
+            }
         }
 
         if game_state.state == State::Exploding {
@@ -161,6 +178,9 @@ async fn main() {
             }
             State::GameOver => {
                 game_over_menu.draw();
+            }
+            State::Victory => {
+                victory_screen.draw();
             }
         }
         ui::draw(game_state.score, game_state.lives, &sheet);

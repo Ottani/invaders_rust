@@ -51,14 +51,14 @@ impl Enemy {
 
     pub fn take_damage(&mut self, amount: i32) {
         self.life -= amount;
-        if self.life <= 0 {
-            // Is dead
-        }
     }
 
-    // A helper method makes the lifecycle status readable to the rest of the game
-    pub fn is_dead(&self) -> bool {
+    pub const fn is_dead(&self) -> bool {
         self.life <= 0
+    }
+
+    pub const fn score(&self) -> i32 {
+        self.enemy_type.life() * 10
     }
 
     pub fn update_position(&mut self, movement: Vec2) {

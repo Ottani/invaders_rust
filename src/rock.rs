@@ -3,7 +3,7 @@ use macroquad::prelude::*;
 pub const ROCK_SIZE: f32 = 48.0;
 
 pub struct Rock {
-    position: Rect,
+    pub position: Rect,
     texture: Texture2D,
     image: Image,
     impact: Image,

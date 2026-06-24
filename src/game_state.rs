@@ -1,7 +1,7 @@
 use crate::bomb::Bomb;
 use crate::bullet::Bullet;
 use crate::enemy::{Enemy, EnemyType};
-use crate::game_state::State::MainMenu;
+use crate::game_state::State::{MainMenu, Victory};
 use crate::player::Player;
 use crate::rock::ROCK_SIZE;
 use crate::rock::Rock;
@@ -27,6 +27,7 @@ pub enum State {
     Exploding,
     Waiting,
     GameOver,
+    Victory,
 }
 
 pub struct GameState {
@@ -127,7 +128,10 @@ impl GameState {
             direction -= 1.0;
         }
         self.player.direction = direction;
-        if is_key_pressed(KeyCode::Space) {
+        if is_key_pressed(KeyCode::Space)
+            || is_key_pressed(KeyCode::W)
+            || is_mouse_button_pressed(MouseButton::Left)
+        {
             self.create_bullet(vec2(
                 self.player.position.x + self.player.position.w / 2.0,
                 self.player.position.y,
@@ -240,6 +244,9 @@ impl GameState {
         for enemy in &mut self.enemies {
             enemy.update_position(movement);
         }
+        if self.enemy_area_rect.bottom() > world.h - 16.0 {
+            self.state = State::GameOver;
+        }
         self.process_enemy_firing(delta);
 
         for slot in self.bombs.iter_mut() {
@@ -259,6 +266,7 @@ impl GameState {
                 for enemy in &mut self.enemies {
                     if !enemy.is_dead() && bullet.position.overlaps(&enemy.position) {
                         enemy.take_damage(1);
+                        self.score += enemy.score();
                         *slot = None;
                         break;
                     }
@@ -276,6 +284,9 @@ impl GameState {
             }
         }
         self.enemies.retain(|enemy| !enemy.is_dead());
+        if self.enemies.is_empty() {
+            self.state = Victory;
+        }
 
         for slot in self.bombs.iter_mut() {
             if let Some(bomb) = slot {
@@ -298,6 +309,24 @@ impl GameState {
                         self.update_lives();
                         break;
                     }
+                }
+            }
+        }
+
+        for enemy in &self.enemies {
+            if !enemy.is_dead() {
+                for some_rock in self.rocks.iter_mut() {
+                    if let Some(rock) = some_rock {
+                        if rock.position.overlaps(&enemy.position) {
+                            *some_rock = None;
+                            break;
+                        }
+                    }
+                }
+                if self.player.check_collision(&enemy.position) {
+                    self.player.explode();
+                    self.update_lives();
+                    break;
                 }
             }
         }
