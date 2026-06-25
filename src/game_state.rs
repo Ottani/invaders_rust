@@ -6,7 +6,7 @@ use crate::player::Player;
 use crate::rock::ROCK_SIZE;
 use crate::rock::Rock;
 use crate::utils::{GAME_HEIGHT, GAME_WIDTH};
-use macroquad::audio::{PlaySoundParams, Sound, load_sound, play_sound, play_sound_once};
+// use macroquad::audio::{PlaySoundParams, Sound, load_sound, play_sound, play_sound_once};
 use macroquad::{prelude::*, rand::ChooseRandom};
 
 const NUM_ROCKS: usize = 5;
@@ -43,8 +43,8 @@ pub struct GameState {
     enemy_shoot_delay: f32,
     pub lives: i32,
     pub score: i32,
-    laser_sound: Sound,
-    explosion_sounds: [Sound; 3],
+    //laser_sound: Sound,
+    //explosion_sounds: [Sound; 3],
 }
 
 impl GameState {
@@ -52,7 +52,7 @@ impl GameState {
         let rocks = Self::create_rocks(sheet_image);
         let mut enemies: Vec<Enemy> = Vec::new();
         Self::create_enemies(&mut enemies);
-        let laser_sound = load_sound("assets/laser1.wav")
+        /* let laser_sound = load_sound("assets/laser1.wav")
             .await
             .expect("Failed to load laser sound");
         let explosion_sounds = [
@@ -65,7 +65,7 @@ impl GameState {
             load_sound("assets/explosion3.wav")
                 .await
                 .expect("Failed to load explosion sound"),
-        ];
+        ];*/
         Self {
             state: MainMenu,
             player: Player::new(PLAYER_Y),
@@ -78,8 +78,8 @@ impl GameState {
             enemy_shoot_delay: 0.0,
             lives: 3,
             score: 0,
-            laser_sound,
-            explosion_sounds,
+            //laser_sound,
+            //explosion_sounds,
         }
     }
 
@@ -152,7 +152,7 @@ impl GameState {
             || is_key_pressed(KeyCode::W)
             || is_mouse_button_pressed(MouseButton::Left)
         {
-            play_sound_once(&self.laser_sound);
+            //play_sound_once(&self.laser_sound);
             self.create_bullet(vec2(
                 self.player.position.x + self.player.position.w / 2.0,
                 self.player.position.y,
@@ -281,18 +281,18 @@ impl GameState {
         self.resolve_collisions();
     }
 
-    fn play_explosion_sound(&mut self) {
-        play_sound(
-            &self.explosion_sounds[macroquad::rand::gen_range(0, self.explosion_sounds.len())],
-            PlaySoundParams {
-                looped: false,
-                volume: 0.3,
-            },
-        );
-    }
+    // fn play_explosion_sound(&mut self) {
+    //     play_sound(
+    //         &self.explosion_sounds[macroquad::rand::gen_range(0, self.explosion_sounds.len())],
+    //         PlaySoundParams {
+    //             looped: false,
+    //             volume: 0.3,
+    //         },
+    //     );
+    // }
 
     fn resolve_collisions(&mut self) {
-        let mut bullet_hit = false;
+        // let mut bullet_hit = false;
         for slot in self.bullets.iter_mut() {
             if let Some(bullet) = slot {
                 let mut hit_enemy = false;
@@ -317,13 +317,13 @@ impl GameState {
                 }
                 if hit_enemy || hit_rock {
                     *slot = None;
-                    bullet_hit = true;
+                    // bullet_hit = true;
                 }
             }
         }
-        if bullet_hit {
-            self.play_explosion_sound();
-        }
+        // if bullet_hit {
+        //     self.play_explosion_sound();
+        // }
         self.enemies.retain(|enemy| !enemy.is_dead());
         if self.enemies.is_empty() {
             self.state = Victory;
@@ -348,7 +348,7 @@ impl GameState {
                         self.player.explode();
                         *slot = None;
                         self.update_lives();
-                        self.play_explosion_sound();
+                        //self.play_explosion_sound();
                         break;
                     }
                 }
