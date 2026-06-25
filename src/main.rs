@@ -42,7 +42,7 @@ async fn main() {
         .expect("Failed to load spritesheet!");
     let sheet: Texture2D = Texture2D::from_image(&sheet_image);
 
-    let mut game_state = GameState::new(&sheet_image);
+    let mut game_state = GameState::new(&sheet_image).await;
     let mut pause_menu = PauseMenu::new();
     let mut game_over_menu = GameOverMenu::new();
     let mut victory_screen = VictoryScreen::new();
